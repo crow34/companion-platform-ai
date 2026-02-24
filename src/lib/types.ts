@@ -1,15 +1,18 @@
+export type CompanionTone = 'warm' | 'playful' | 'grounded' | 'direct'
+export type CompanionVisibility = 'private' | 'friends' | 'public'
+
 export interface CompanionProfile {
   id: string
   name: string
   archetype: string
-  tone: 'warm' | 'playful' | 'grounded' | 'direct'
+  tone: CompanionTone
   boundaries: string[]
   bio: string
-  visibility: 'private' | 'friends' | 'public'
+  visibility: CompanionVisibility
   createdAt: string
 }
 
 export interface CompanionMessage {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
 }

@@ -6,8 +6,10 @@ Human-like companion platform focused on genuine, non-sexual connection.
 
 - ✅ Project initialized and polished UI shell added
 - ✅ Home, roadmap, and companion directory pages
-- ✅ Prototype API routes for companion creation/listing and chat responses
-- 🚧 Next: auth, persistent DB schema, real model integration, safety layer
+- ✅ Prototype API routes for companion creation/listing and chat
+- ✅ PostgreSQL + Prisma schema added
+- ✅ Gemini chat reply integration added (with fallback)
+- 🚧 Next: auth, moderation workflow, and richer memory retrieval
 
 ## Core product direction
 
@@ -21,28 +23,41 @@ Human-like companion platform focused on genuine, non-sexual connection.
 - `/` — project overview
 - `/companions` — sample companion profiles
 - `/roadmap` — staged implementation plan
-- `GET /api/companions` — list prototype companions
-- `POST /api/companions` — create prototype companion payload
-- `POST /api/chat` — response scaffold for companion messaging
+- `GET /api/companions` — list companion profiles
+- `POST /api/companions` — create companion profile
+- `POST /api/chat` — companion chat response generation
 
-## Tech stack (initial)
+> When `DATABASE_URL` is set, routes persist to PostgreSQL.
+> Without `DATABASE_URL`, routes run in fallback in-memory mode.
+
+## Tech stack
 
 - Next.js 14 + TypeScript + Tailwind
+- Prisma + PostgreSQL
+- Gemini API (`@google/generative-ai`)
 
 ## Run locally
 
 ```bash
 npm install
+npm run db:generate
+npm run db:push
 npm run dev
 ```
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and adjust values as needed.
+Copy `.env.example` to `.env.local`:
+
+- `DATABASE_URL` (optional for persistence)
+- `GEMINI_API_KEY` (optional for model responses)
+- `GEMINI_MODEL` (defaults to `gemini-1.5-flash`)
+
+If Gemini key is missing, API falls back to a safe template response.
 
 ## Upcoming implementation plan
 
 - Add auth + account management
-- Add DB schema for users, companions, conversations, memories
-- Replace stub chat with Gemini integration + memory retrieval
-- Add voice interaction pipeline and safety/moderation workflow
+- Add conversation history UI with pagination
+- Add memory extraction/retrieval per companion
+- Add safety and moderation policy layer

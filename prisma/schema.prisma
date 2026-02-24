@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserAccount {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  displayName   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  companions    Companion[]
+  conversations Conversation[]
+  memories      MemoryFact[]
+}
+
+model Companion {
+  id            String         @id @default(cuid())
+  userId        String?
+  name          String
+  archetype     String
+  tone          String
+  boundaries    Json
+  bio           String
+  visibility    String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          UserAccount?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversations Conversation[]
+  memories      MemoryFact[]
+}
+
+model Conversation {
+  id           String       @id @default(cuid())
+  userId       String?
+  companionId  String
+  title        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         UserAccount? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  companion    Companion    @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  messages     Message[]
+}
+
+model Message {
+  id              String       @id @default(cuid())
+  conversationId  String
+  role            String
+  content         String
+  createdAt       DateTime     @default(now())
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model MemoryFact {
+  id           String       @id @default(cuid())
+  userId       String?
+  companionId  String
+  fact         String
+  importance   Int          @default(1)
+  createdAt    DateTime     @default(now())
+  user         UserAccount? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  companion    Companion    @relation(fields: [companionId], references: [id], onDelete: Cascade)
+}
