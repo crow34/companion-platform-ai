@@ -3,12 +3,14 @@ import { generateCompanionReply } from '@/lib/ai'
 import { sampleCompanions } from '@/lib/mock-data'
 import { prisma } from '@/lib/prisma'
 import { CompanionMessage, CompanionProfile } from '@/lib/types'
+import { getCurrentUser } from '@/lib/auth'
 
 interface ChatRequestBody {
   companionId?: string
   companionName?: string
   conversationId?: string
   messages?: CompanionMessage[]
+  message?: string
 }
 
 function fallbackCompanion(body: ChatRequestBody): CompanionProfile {
@@ -39,40 +41,58 @@ function fallbackCompanion(body: ChatRequestBody): CompanionProfile {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ChatRequestBody
+    const persistence = process.env.DATABASE_URL ? 'postgres' : 'in-memory'
 
-    if (!body.messages?.length) {
+    const appendedMessages = [...(body.messages ?? [])]
+    if (body.message?.trim()) {
+      appendedMessages.push({ role: 'user', content: body.message.trim() })
+    }
+
+    const userMessage = [...appendedMessages]
+      .reverse()
+      .find((message) => message.role === 'user')
+
+    if (!userMessage?.content) {
       return NextResponse.json(
         { error: 'messages are required' },
         { status: 400 }
       )
     }
 
-    const userMessage = [...body.messages]
-      .reverse()
-      .find((message) => message.role === 'user')
-
     let companion = fallbackCompanion(body)
     let conversationId = body.conversationId ?? null
-    const persistence = process.env.DATABASE_URL ? 'postgres' : 'in-memory'
+    let contextMessages = appendedMessages
 
     if (process.env.DATABASE_URL) {
+      const user = await getCurrentUser()
+      if (!user) {
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+      }
+
       let companionRecord = null
 
       if (body.companionId) {
-        companionRecord = await prisma.companion.findUnique({
-          where: { id: body.companionId },
+        companionRecord = await prisma.companion.findFirst({
+          where: {
+            id: body.companionId,
+            userId: user.id,
+          },
         })
       }
 
       if (!companionRecord && body.companionName) {
         companionRecord = await prisma.companion.findFirst({
-          where: { name: body.companionName },
+          where: {
+            name: body.companionName,
+            userId: user.id,
+          },
         })
       }
 
       if (!companionRecord) {
         companionRecord = await prisma.companion.create({
           data: {
+            userId: user.id,
             name: companion.name,
             archetype: companion.archetype,
             tone: companion.tone,
@@ -97,8 +117,12 @@ export async function POST(request: Request) {
       }
 
       if (conversationId) {
-        const existingConversation = await prisma.conversation.findUnique({
-          where: { id: conversationId },
+        const existingConversation = await prisma.conversation.findFirst({
+          where: {
+            id: conversationId,
+            userId: user.id,
+            companionId: companion.id,
+          },
         })
         if (!existingConversation) {
           conversationId = null
@@ -108,6 +132,7 @@ export async function POST(request: Request) {
       if (!conversationId) {
         const createdConversation = await prisma.conversation.create({
           data: {
+            userId: user.id,
             companionId: companion.id,
             title: `Chat with ${companion.name}`,
           },
@@ -115,20 +140,35 @@ export async function POST(request: Request) {
         conversationId = createdConversation.id
       }
 
-      if (userMessage) {
-        await prisma.message.create({
-          data: {
-            conversationId,
-            role: 'user',
-            content: userMessage.content,
-          },
-        })
-      }
+      await prisma.message.create({
+        data: {
+          conversationId,
+          role: 'user',
+          content: userMessage.content,
+        },
+      })
+
+      const latestMessages = await prisma.message.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: 'desc' },
+        take: 12,
+        select: {
+          role: true,
+          content: true,
+        },
+      })
+
+      contextMessages = latestMessages
+        .reverse()
+        .map((message) => ({
+          role: message.role as CompanionMessage['role'],
+          content: message.content,
+        }))
     }
 
     const reply = await generateCompanionReply({
       companion,
-      messages: body.messages,
+      messages: contextMessages,
     })
 
     if (process.env.DATABASE_URL && conversationId) {
@@ -145,6 +185,7 @@ export async function POST(request: Request) {
       success: true,
       persistence,
       conversationId,
+      companion,
       response: {
         role: 'assistant',
         content: reply.content,

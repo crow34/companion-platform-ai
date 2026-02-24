@@ -16,3 +16,18 @@ export interface CompanionMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
 }
+
+export interface UserSession {
+  id: string
+  email: string
+  displayName?: string | null
+}
+
+export interface ConversationSummary {
+  id: string
+  title: string
+  companionId: string
+  companionName: string
+  lastMessage?: string
+  updatedAt: string
+}

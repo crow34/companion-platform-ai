@@ -39,8 +39,14 @@ export default function Home() {
 
         <div className="mt-8 flex flex-wrap gap-4">
           <Link
-            href="/companions"
+            href="/chat"
             className="rounded-lg bg-violet-500 px-5 py-3 font-semibold text-slate-950 hover:bg-violet-400"
+          >
+            Open chat workspace
+          </Link>
+          <Link
+            href="/companions"
+            className="rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-slate-500"
           >
             Browse companion profiles
           </Link>
@@ -66,10 +72,17 @@ export default function Home() {
         <h3 className="text-xl font-semibold">API readiness</h3>
         <ul className="mt-3 list-disc space-y-1 pl-6 text-slate-300">
           <li>
-            <code>GET /api/companions</code> and <code>POST /api/companions</code> (prototype)
+            <code>GET/POST /api/auth/session</code> for lightweight account sessions
           </li>
           <li>
-            <code>POST /api/chat</code> response scaffold for companion messaging
+            <code>GET/POST /api/companions</code> for user-scoped companion profiles
+          </li>
+          <li>
+            <code>POST /api/chat</code> for Gemini-backed conversation replies
+          </li>
+          <li>
+            <code>GET /api/conversations</code> and <code>GET /api/conversations/:id/messages</code>
+            {' '}for history retrieval
           </li>
         </ul>
       </section>

@@ -5,11 +5,12 @@ Human-like companion platform focused on genuine, non-sexual connection.
 ## Status
 
 - ✅ Project initialized and polished UI shell added
-- ✅ Home, roadmap, and companion directory pages
-- ✅ Prototype API routes for companion creation/listing and chat
+- ✅ Home, roadmap, companions, and chat workspace pages
+- ✅ Auth session endpoints + user-scoped companion data
+- ✅ Conversation history endpoints and UI wiring
 - ✅ PostgreSQL + Prisma schema added
 - ✅ Gemini chat reply integration added (with fallback)
-- 🚧 Next: auth, moderation workflow, and richer memory retrieval
+- 🚧 Next: moderation workflow and richer memory retrieval
 
 ## Core product direction
 
@@ -21,10 +22,13 @@ Human-like companion platform focused on genuine, non-sexual connection.
 ## Current routes
 
 - `/` — project overview
-- `/companions` — sample companion profiles
+- `/chat` — live chat workspace (session + conversations)
+- `/companions` — create and manage companion profiles
 - `/roadmap` — staged implementation plan
-- `GET /api/companions` — list companion profiles
-- `POST /api/companions` — create companion profile
+- `GET/POST /api/auth/session` — lightweight account sessions
+- `GET/POST /api/companions` — list/create companion profiles
+- `GET /api/conversations` — conversation summaries
+- `GET /api/conversations/:id/messages` — conversation message history
 - `POST /api/chat` — companion chat response generation
 
 > When `DATABASE_URL` is set, routes persist to PostgreSQL.
@@ -57,7 +61,7 @@ If Gemini key is missing, API falls back to a safe template response.
 
 ## Upcoming implementation plan
 
-- Add auth + account management
-- Add conversation history UI with pagination
+- Add message pagination + conversation search
 - Add memory extraction/retrieval per companion
 - Add safety and moderation policy layer
+- Add voice interaction pipeline (Gemini live + ElevenLabs)

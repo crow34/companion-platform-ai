@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sampleCompanions } from '@/lib/mock-data'
 import { prisma } from '@/lib/prisma'
 import { CompanionProfile, CompanionTone, CompanionVisibility } from '@/lib/types'
+import { getCurrentUser } from '@/lib/auth'
 
 function toProfile(companion: {
   id: string
@@ -38,7 +39,18 @@ export async function GET() {
       })
     }
 
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        persistence: 'postgres',
+        total: 0,
+        companions: [],
+      })
+    }
+
     const companions = await prisma.companion.findMany({
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 50,
     })
@@ -90,8 +102,14 @@ export async function POST(request: Request) {
       })
     }
 
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
+
     const created = await prisma.companion.create({
       data: {
+        userId: user.id,
         name: body.name,
         archetype: body.archetype,
         tone: body.tone,
